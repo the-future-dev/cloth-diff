@@ -1,0 +1,31 @@
+\begin{thebibliography}{5}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Chen and Rojas(2024)]{chen2024trakdis}
+Wei Chen and Nicolas Rojas.
+\newblock Trakdis: A transformer-based knowledge distillation approach for visual reinforcement learning with application to cloth manipulation, 2024.
+
+\bibitem[Chi et~al.(2023)Chi, Feng, Du, Xu, Cousineau, Burchfiel, and Song]{chi2023diffusionpolicy}
+Cheng Chi, Siyuan Feng, Yilun Du, Zhenjia Xu, Eric Cousineau, Benjamin Burchfiel, and Shuran Song.
+\newblock Diffusion policy: Visuomotor policy learning via action diffusion.
+\newblock \emph{arXiv preprint arXiv:2303.04137}, 2023.
+\newblock Version 4, revised 1 Jun 2023.
+
+\bibitem[Kumar et~al.(2021)Kumar, Fu, Pathak, and Malik]{kumar2021rma}
+Ashish Kumar, Zipeng Fu, Deepak Pathak, and Jitendra Malik.
+\newblock Rma: Rapid motor adaptation for legged robots, 2021.
+
+\bibitem[Lin et~al.(2021)Lin, Wang, Olkin, and Held]{lin2021softgym}
+Xingyu Lin, Yufei Wang, Jake Olkin, and David Held.
+\newblock Softgym: Benchmarking deep reinforcement learning for deformable object manipulation.
+\newblock \emph{arXiv preprint arXiv:2011.07215}, 2021.
+
+\bibitem[Salhotra et~al.(2022)Salhotra, Liu, Dominguez-Kuhne, and Sukhatme]{salhotra2022learning}
+Gautam Salhotra, I-Chun~Arthur Liu, Marcus Dominguez-Kuhne, and Gaurav~S. Sukhatme.
+\newblock Learning deformable object manipulation from expert demonstrations, 2022.
+
+\end{thebibliography}

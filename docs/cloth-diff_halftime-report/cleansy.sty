@@ -1,0 +1,320 @@
+% cleansy.sty
+% A comprehensive style file integrating features from natbib.sty, intern.sty, and math_commands.tex
+
+% Load necessary packages
+\RequirePackage{fancyhdr}
+\RequirePackage{natbib}
+\RequirePackage{xcolor}
+\RequirePackage{mdframed}
+\RequirePackage{url}
+\RequirePackage{subfigure}
+\RequirePackage{wrapfig}
+\RequirePackage{amsthm}
+\RequirePackage{amssymb}
+\RequirePackage{amsmath}
+\RequirePackage{amsfonts}
+\RequirePackage{bm}
+\RequirePackage{enumerate}
+\RequirePackage{tikz}
+\RequirePackage{graphicx}
+\RequirePackage{mathrsfs}
+\RequirePackage{eucal}
+\RequirePackage{verbatim}
+\RequirePackage{geometry}
+\RequirePackage{microtype}
+
+% Set citation style
+\setcitestyle{authoryear,round,citesep={;},aysep={,},yysep={,}}
+
+% Page layout settings
+\setlength{\paperheight}{11in}
+\setlength{\paperwidth}{8.5in}
+\oddsidemargin .5in
+\evensidemargin .5in
+\marginparwidth 0.07 true in
+\topmargin -0.5in
+\addtolength{\headsep}{0.25in}
+\textheight 8 true in
+\textwidth 5.5 true in
+\widowpenalty=10000
+\clubpenalty=10000
+\flushbottom \sloppy
+
+% Line spacing adjustment from intern.tex
+\linespread{1.10}
+
+% Add this BEFORE any header settings
+\newcommand{\runningtitle}[1]{\def\@runningtitle{#1}}
+\def\@runningtitle{} % Default to empty
+
+% Then modify the header settings
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape\ifx\@runningtitle\@empty\else\@runningtitle\fi}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{16pt}
+\renewcommand{\headrule}{\hrule width\textwidth height\headrulewidth\vskip-\headrulewidth}
+
+% Create a custom plain style for first page with no header line
+\fancypagestyle{plain}{%
+  \fancyhf{} % Clear all header/footer fields
+  \renewcommand{\headrulewidth}{0pt} % No header rule on first page
+}
+
+% ICLR-specific settings
+\newif\ificlrfinal
+\iclrfinalfalse
+\def\iclrfinalcopy{\iclrfinaltrue}
+
+% Title and author formatting
+\def\toptitlebar{\hrule height0.5pt\vskip .5in\vskip-\parskip}
+\def\bottomtitlebar{\vskip .5in\vskip-\parskip\hrule height0.5pt\vskip .15in}
+
+% Add these commands near the beginning of cleansy.sty
+\def\projectauthor#1{\gdef\@projectauthor{#1}}
+\def\projectemail#1{\gdef\@projectemail{#1}}
+\def\projectsupervisors#1{\gdef\@projectsupervisors{#1}}
+\def\projecttimeline#1{\gdef\@projecttimeline{#1}}
+\def\projectlocation#1{\gdef\@projectlocation{#1}}
+
+% Set default values
+\projectauthor{}
+\projectemail{}
+\projectsupervisors{}
+\projecttimeline{}
+\projectlocation{}
+
+\def\@maketitle{\vbox{\hsize\textwidth
+\toptitlebar % Add decorative line before title
+{\begin{center}\LARGE\bfseries \@title\end{center}\par}
+\bottomtitlebar % Add decorative line after title
+\ificlrfinal
+    \lhead{Published as a conference paper at ICLR 2021}
+    \def\And{\end{tabular}\hfil\linebreak[0]\hfil
+            \begin{tabular}[t]{l}\bf\rule{\z@}{24pt}\ignorespaces}%
+  \def\AND{\end{tabular}\hfil\linebreak[4]\hfil
+            \begin{tabular}[t]{l}\bf\rule{\z@}{24pt}\ignorespaces}%
+    \begin{tabular}[t]{l}\bf\rule{\z@}{24pt}\@author\end{tabular}%
+\else
+       \lhead{\textbf{Project Proposal} - Division of Robotic, Perception and Learning. }
+   \def\And{\end{tabular}\hfil\linebreak[0]\hfil
+            \begin{tabular}[t]{l}\bf\rule{\z@}{24pt}\ignorespaces}%
+  \def\AND{\end{tabular}\hfil\linebreak[4]\hfil
+            \begin{tabular}[t]{l}\bf\rule{\z@}{24pt}\ignorespaces}%
+    \begin{center}
+    \begin{tabular}{rp{9cm}}
+    \ifx\@projectauthor\@empty\else\textbf{Author:} & \@projectauthor\ifx\@projectemail\@empty\else\ — \@projectemail\fi \\[0.8ex]
+    \fi
+    \ifx\@projectsupervisors\@empty\else\textbf{Supervisor:} & \@projectsupervisors \\[0.8ex]
+    \fi
+    \ifx\@projecttimeline\@empty\else\textbf{Timeline:} & \@projecttimeline \\[0.8ex]
+    \fi
+    \ifx\@projectlocation\@empty\else\textbf{Location:} & \@projectlocation
+    \fi
+    \end{tabular}
+    \end{center}%
+\fi
+\vskip 0.5in minus 0.2in}}
+
+\def\maketitle{\par
+\begingroup
+   \def\thefootnote{\fnsymbol{footnote}}
+   \def\@makefnmark{\hbox to 0pt{$^{\@thefnmark}$\hss}}
+   \long\def\@makefntext##1{\parindent 1em\noindent
+                            \hbox to1.8em{\hss $\m@th ^{\@thefnmark}$}##1}
+   \@maketitle \@thanks
+\endgroup
+\setcounter{footnote}{0}
+\let\maketitle\relax \let\@maketitle\relax
+\gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax
+\thispagestyle{plain}}
+
+% Modify the abstract environment
+\renewenvironment{abstract}{\vskip.075in\centerline{\large\bf
+Abstract}\vspace{0.5ex}\begin{quote}}{\par\end{quote}\vskip 1ex}
+
+\makeatletter % Moved \makeatletter to encompass all sectioning commands
+
+% Section formatting
+\def\section{\@startsection{section}{1}{\z@}
+  {-3.5ex plus -1.0ex minus -.2ex}
+  {2.0ex plus 0.5ex}
+  {\Large\bfseries}}
+
+\def\section*{\@startsection{section}{1}{\z@}
+  {-4ex plus -1.5ex minus -.2ex}
+  {2.5ex plus 0.5ex}
+  {\Large\bfseries\MakeUppercase}}
+
+\def\subsection{\@startsection{subsection}{2}{\z@}
+  {-1.8ex plus -0.5ex minus -.2ex}
+  {0.8ex plus .2ex}
+  {\normalsize\bfseries}}
+
+\def\subsubsection{\@startsection{subsubsection}{3}{\z@}
+  {-1.5ex plus -0.5ex minus -.2ex}
+  {0.5ex plus .2ex}
+  {\normalsize\bfseries}}
+
+\def\paragraph{\@startsection{paragraph}{4}{\z@}
+  {1.5ex plus 0.5ex minus .2ex}
+  {-1em}
+  {\normalsize\itshape}}
+
+\def\subparagraph{\@startsection{subparagraph}{5}{\z@}
+  {1.5ex plus 0.5ex minus .2ex}
+  {-1em}
+  {\normalsize\sc}}
+
+\makeatother % Moved \makeatother to after all sectioning commands
+
+% Improve paragraph spacing
+\setlength{\parskip}{1.2ex plus 0.5ex minus 0.2ex}
+
+% Improve bullet list formatting
+\setlength{\itemsep}{0.8ex}
+\setlength{\parsep}{0.6ex}
+\setlength{\topsep}{1.2ex}
+\setlength{\leftmargin}{1.5em}
+
+% Define the domexample environment
+\newenvironment{domexample}{%
+  \begin{mdframed}[
+    linewidth=1pt,
+    linecolor=gray!50,
+    backgroundcolor=gray!5,
+    topline=true,
+    bottomline=true,
+    leftline=true,
+    rightline=true,
+    innertopmargin=10pt,
+    innerbottommargin=10pt,
+    innerrightmargin=10pt,
+    innerleftmargin=10pt
+  ]
+  \textbf{Example:}\\
+}{%
+  \end{mdframed}
+}
+
+% Theorem environments
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}[section]
+\setlength{\leftmargini}{15pt}
+
+% Editorial markup commands
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+% Color definitions for author notations
+\definecolor{orange}{RGB}{252, 130, 62}
+\definecolor{red}{RGB}{255, 0, 0}
+\definecolor{brown}{RGB}{155, 25, 10}
+\definecolor{blue}{RGB}{0, 0, 255}
+\definecolor{green}{RGB}{78, 196, 164}
+
+% Author notation commands
+% \newcommand{\al}{\color{blue}}       % Author 1 comments
+% \newcommand{\ar}{\color{cyan}}       % Author 2 comments
+% \newcommand{\ma}{\color{orange}}     % Author 3 comments
+% \newcommand{\red}{\color{red}}       % Important edits/remarks
+
+% Improve hyphenation to avoid bad breaks
+\pretolerance=5000
+\tolerance=9000
+\emergencystretch=0.75em
+
+% Math commands from math_commands.tex
+% Mark sections of captions for referring to divisions of figures
+\newcommand{\figleft}{{\em (Left)}}
+\newcommand{\figcenter}{{\em (Center)}}
+\newcommand{\figright}{{\em (Right)}}
+\newcommand{\figtop}{{\em (Top)}}
+\newcommand{\figbottom}{{\em (Bottom)}}
+\newcommand{\captiona}{{\em (a)}}
+\newcommand{\captionb}{{\em (b)}}
+\newcommand{\captionc}{{\em (c)}}
+\newcommand{\captiond}{{\em (d)}}
+
+% Highlight a newly defined term
+\newcommand{\newterm}[1]{{\bf #1}}
+
+% Reference commands
+\def\figref#1{figure~\ref{#1}}
+\def\Figref#1{Figure~\ref{#1}}
+\def\twofigref#1#2{figures \ref{#1} and \ref{#2}}
+\def\quadfigref#1#2#3#4{figures \ref{#1}, \ref{#2}, \ref{#3} and \ref{#4}}
+\def\secref#1{section~\ref{#1}}
+\def\Secref#1{Section~\ref{#1}}
+\def\twosecrefs#1#2{sections \ref{#1} and \ref{#2}}
+\def\secrefs#1#2#3{sections \ref{#1}, \ref{#2} and \ref{#3}}
+\def\eqref#1{equation~\ref{#1}}
+\def\Eqref#1{Equation~\ref{#1}}
+\def\plaineqref#1{\ref{#1}}
+\def\chapref#1{chapter~\ref{#1}}
+\def\Chapref#1{Chapter~\ref{#1}}
+\def\rangechapref#1#2{chapters\ref{#1}--\ref{#2}}
+\def\algref#1{algorithm~\ref{#1}}
+\def\Algref#1{Algorithm~\ref{#1}}
+\def\twoalgref#1#2{algorithms \ref{#1} and \ref{#2}}
+\def\Twoalgref#1#2{Algorithms \ref{#1} and \ref{#2}}
+\def\partref#1{part~\ref{#1}}
+\def\Partref#1{Part~\ref{#1}}
+\def\twopartref#1#2{parts \ref{#1} and \ref{#2}}
+
+% Math operators and common functions
+\def\ceil#1{\lceil #1 \rceil}
+\def\floor#1{\lfloor #1 \rfloor}
+\def\1{\bm{1}}
+\newcommand{\train}{\mathcal{D}}
+\newcommand{\valid}{\mathcal{D_{\mathrm{valid}}}}
+\newcommand{\test}{\mathcal{D_{\mathrm{test}}}}
+\def\eps{{\epsilon}}
+
+% Essential vector and matrix notation
+\def\vzero{{\bm{0}}}
+\def\vone{{\bm{1}}}
+\def\vmu{{\bm{\mu}}}
+\def\vtheta{{\bm{\theta}}}
+
+% Common mathematical operators
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Ls}{\mathcal{L}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\emp}{\tilde{p}}
+\newcommand{\lr}{\alpha}
+\newcommand{\reg}{\lambda}
+\newcommand{\rect}{\mathrm{rectifier}}
+\newcommand{\softmax}{\mathrm{softmax}}
+\newcommand{\sigmoid}{\sigma}
+\newcommand{\softplus}{\zeta}
+\newcommand{\KL}{D_{\mathrm{KL}}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\standarderror}{\mathrm{SE}}
+\newcommand{\Cov}{\mathrm{Cov}}
+
+% Optimization operators
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\Tr}{Tr}
+\let\ab\allowbreak
+
+% Load hyperref last to avoid conflicts
+\RequirePackage{hyperref}
+
+% End of cleansy.sty
+
+\newcommand{\labeledparagraph}[1]{%
+  \par\vspace{2ex}\noindent
+  \textbf{#1:}\space
+  \vspace{0.5ex}
+}
+
+% Reduce space around figures and captions
+\setlength{\textfloatsep}{10pt plus 1.0pt minus 2.0pt} % Default is 20pt
+\setlength{\floatsep}{8pt plus 1.0pt minus 2.0pt}    % Default is 12pt
+\setlength{\intextsep}{8pt plus 1.0pt minus 2.0pt}   % Default is 12pt
+\setlength{\abovecaptionskip}{5pt plus 1pt minus 1pt} % Default is 10pt
+\setlength{\belowcaptionskip}{5pt plus 1pt minus 1pt} % Default is 0pt, but often other things add space
