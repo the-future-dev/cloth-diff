@@ -83,10 +83,13 @@ To evaluata the sample efficiency differenta training dataset was used, maintain
     \label{fig:dmfd_clothfold_efficiency}
 \end{figure}
 
-\labeledparagraph{Behavioral Cloning with Transformer-Based Diffusion Policy on SoftGym's ClothFold Task} At the moment another experiment is underway: to develop policies for the "ClothFold" task in SoftGym \cite{lin2021softgym} with a transformer-based diffusion policy architecture.
-Drawing inspiration from Diffusion Policy \cite{chi2023diffusionpolicy} we are employing a behavioral cloning approach. We want to evaluate the same three policy variants as in the PushT experiments (image-based, state-based, and privileged image-based trained with state features).
-We also are executing the sample efficiency study for this approach, as a key part of the research.
-Once again, the performance metrics are consistent with those defined in Equations \eqref{eq:performance_halftime} and \eqref{eq:norm_performance_halftime}, with results presented in Figure \ref{fig:bcdiff_clothfold_efficiency}.
+\labeledparagraph{Behavioral Cloning with Transformer-Based Diffusion Policy on SoftGym's ClothFold Task}
+We are currently conducting an experiment to develop policies for the "ClothFold" task in SoftGym \cite{lin2021softgym} using a transformer-based diffusion policy architecture.
+Drawing inspiration from Diffusion Policy \cite{chi2023diffusionpolicy}, we employ a behavioral cloning approach.
+Our goal is to evaluate the same three policy variants as in the PushT experiments: image-based, state-based, and privileged image-based trained with state features.
+Currently, we are particularly focused on developing the "privileged policy" by conducting various experiments to identify the optimal approach for exploiting privileged information.
+For instance, we are exploring the integration of a transformer-based shared feature encoder before conditioning the policy, testing different methods for merging information from the image and state pipelines, and evaluating various dropout rates to enhance performance.
+Preliminary results from the sample efficiency study of image-based and state-based policies for this approach are presented in Figure \ref{fig:bcdiff_clothfold_efficiency}. The performance metrics align with those defined in Equations \eqref{eq:performance_halftime} and \eqref{eq:norm_performance_halftime}.
 
 \begin{figure}[htbp]
     \centering
@@ -94,6 +97,24 @@ Once again, the performance metrics are consistent with those defined in Equatio
     \caption{BC-Diffusion Performance vs. Number of Demonstrations on the ClothFold task. The plot shows Normalized Performance (y-axis, higher is better, as defined in Equation~\eqref{eq:norm_performance_halftime}) against the number of training demonstrations (logarithmic x-axis). Shaded regions indicate standard deviation. Each data point represents statistics from 100 evaluation episodes (20 episodes across 5 distinct random seeds).}
     \label{fig:bcdiff_clothfold_efficiency}
 \end{figure}
+
+\newpage
+
+\section*{Future Tests}
+Future tests will focus on exploring various strategies to achieve the best results in exploiting privileged information. Some critical tests that we plan to perform include:
+\begin{itemize}
+    \item Concatenation of inputs combined with dropout to balance the influence of privileged information during training.
+    \item Mean Squared Error (MSE) between states and features, inspired by approaches like TrakDis, to align representations.
+    \item Contrastive Loss between state and image encoders, similar to techniques used in Rapid Motor Adaptor, to enhance feature correlation.
+    \item Expanding on contrastive learning, we will investigate geometric contrastive learning to capture spatial relationships.
+    \item Summation of features instead of concatenation to explore alternative methods of information fusion.
+\end{itemize}
+
+If satisfactory results are obtained from these experiments, the next step will be to validate our findings on a real-world robot. Executing our experimental results in real-time will significantly strengthen the impact and applicability of our research outcomes.
+
+However, if these tests and additional explorations do not yield the desired performance, we will pivot to an orthogonal approach. This would involve building upon the insights gained and developing a novel framework that leverages a pretrained distribution to achieve sample efficiency in learning.
+
+
 
 \section*{Metrics}
 \subsection*{ClothFold Task Performance Metrics}

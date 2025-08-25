@@ -1,6 +1,0 @@
-﻿Property,Task,Status,Description,Date
-1,Literature Review,In progress,Conducting a thorough literature review to identify gaps in current research on imitation learning for rigid and deformable object manipulation.,
-2,Tools Familiarization,In progress,"Familiarizing with tools already available in our robotics lab such as frameworks integrating diffusion models for imitation learning and frameworks for graph tracking, such as Gaussian Splatting, both in simulation and the real world.",
-3,Experiments,In progress,Implementing baseline models and collecting demonstration datasets in both simulated and real environments.,
-4,Baseline Comparison,Not started,Testing and evaluating the proposed hypothesis by comparing the performance of models trained with and without privileged graph information.,
-5,Paper Construction,Not started,Report the results in a scientific manner.,

@@ -1,3 +1,0 @@
-# Benchmark
-
-Status: Not started
