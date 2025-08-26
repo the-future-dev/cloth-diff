@@ -4,3 +4,5 @@ wandb/*
 *.out
 
 __pycache__
+
+softgym_latest.sif
