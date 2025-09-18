@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from einops import rearrange, reduce
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from torch.optim import AdamW
+from diffusion_policy.model.common.optimizer_factory import DiffusionPolicyOptimizer
 
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 from diffusion_policy.policy.base_image_policy import BaseImagePolicy
@@ -25,10 +26,10 @@ from core.awac import awacDrQCNNEncoder
 from diffusion_policy.model.privileged.state_encoder import IdentityStateEncoder, MLPStateEncoder
 from diffusion_policy.model.privileged.shared_encoder import get_shared_encoder
 
-class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
+class DiffusionTransformerDoubleModalityPolicy(BaseImagePolicy):
     """
-    A diffusion‐based policy that at TRAIN time uses both `state` and `image`
-    observations, but at INFERENCE can disable the `state` branch in four ways.
+    A diffusion‐based policy that ALWAYS uses both `state` and `image`
+    observations during BOTH training AND inference. No modality dropout.
     """
     def __init__(
         self,
@@ -57,11 +58,6 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
         shared_encoder_type: str = None,        # 'mlp', 'transformer', 'perceiver', 'cross_attention'
         shared_encoder_kwargs: dict = None,
 
-        # how to disable the state branch at test time
-        disable_privileged_method: str = 'zero',   # 'zero','skip','gating','mask'
-        privileged_mask: torch.Tensor = None,      # required if method=='mask'
-
-        disable_privileged_prob: float = 0.0,
         # predict only next k actions
         pred_action_steps_only: bool = False,
 
@@ -79,10 +75,6 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
         **sample_kwargs
     ):
         super().__init__()
-        # store training‐time disable probability
-        self.disable_privileged_prob = disable_privileged_prob
-        self.use_contrastive_loss = True
-        self.contrastive_weight = 0.3
 
         # parse dims
         action_dim = shape_meta['action']['shape'][0]
@@ -219,27 +211,6 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
         else:
             self.shared_encoder = None
 
-        # disable‐privileged machinery
-        self.disable_privileged_method = disable_privileged_method
-        if disable_privileged_method == 'gating':
-            self.priv_gating_alpha = nn.Parameter(torch.tensor(0.0))
-        if disable_privileged_method == 'mask':
-            assert privileged_mask is not None, (
-                "Provide privileged_mask if method=='mask'"
-            )
-            assert privileged_mask.shape[0] == n_obs_steps, (
-                f"privileged_mask first dim must match n_obs_steps={n_obs_steps}, got shape={privileged_mask.shape}"
-            )
-            # Additional validation for mask dimensions if state_feat_dim is known
-            if state_encoder_type == 'mlp' and state_feat_dim is not None:
-                assert privileged_mask.shape[-1] == state_feat_dim or privileged_mask.shape[-1] == 1, (
-                    f"privileged_mask last dim must match state_feat_dim={state_feat_dim} or be 1, got shape={privileged_mask.shape}"
-                )
-            self.register_buffer(
-                'privileged_mask',
-                privileged_mask.view(1, n_obs_steps, 1)
-            )
-
         # build diffusion model
         self.model = TransformerForDiffusion(
             input_dim=action_dim,
@@ -276,21 +247,6 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
         )
         self.sample_kwargs = sample_kwargs
 
-    def _disable_state(self, state_feats: torch.Tensor) -> torch.Tensor:
-        # Override state_feats with ones to ensure non-zero values
-        state_feats = torch.ones_like(state_feats)
-        
-        m = self.disable_privileged_method
-        if m in ('zero','skip'):
-            return torch.zeros_like(state_feats)
-        elif m == 'gating':
-            alpha = torch.sigmoid(self.priv_gating_alpha)
-            return state_feats * alpha
-        elif m == 'mask':
-            return state_feats * self.privileged_mask
-        else:
-            raise ValueError(f"Unknown disable_privileged_method={m}")
-
     def conditional_sample(
         self,
         condition_data: torch.Tensor,
@@ -324,12 +280,11 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
         device = next(self.model.parameters()).device
         dtype = next(self.model.parameters()).dtype
 
-        # state branch
+        # state branch - ALWAYS USED (no disabling)
         state = obs_dict['state'][:,:self.n_obs_steps]
         state_feats = self.state_encoder(state)
-        state_feats = self._disable_state(state_feats)
 
-        # image branch
+        # image branch - ALWAYS USED
         this_nobs = dict_apply(
             {'image': obs_dict['image']},
             lambda x: x[:,:self.n_obs_steps].reshape(-1, *x.shape[2:])
@@ -341,7 +296,7 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
             img_feats = self.obs_encoder(this_nobs)
         image_feats = img_feats.view(B, self.n_obs_steps, -1)
 
-        # fuse & shared
+        # fuse & shared - ALWAYS USE BOTH MODALITIES
         if self.fuse_op == 'sum':
             fused = state_feats + image_feats
         else:
@@ -350,6 +305,7 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
             cond = self.shared_encoder(image_feats, state_feats)
         else:
             cond = self.shared_encoder(fused) if self.shared_encoder else fused
+
         # cond_data / cond_mask
         cond_data = torch.zeros(
             (B, self.horizon, self.action_dim),
@@ -377,11 +333,11 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
         B, T, _ = nactions.shape
         To = self.n_obs_steps
 
-        # state feats (always privileged in training)
+        # state feats - ALWAYS USED during training
         state = batch['state'][:, :To]
         state_feats = self.state_encoder(state)
 
-        # image feats
+        # image feats - ALWAYS USED during training
         this_nobs = dict_apply(
             {'image': batch['image']},
             lambda x: x[:,:To].reshape(-1, *x.shape[2:])
@@ -393,47 +349,14 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
             img_feats = self.obs_encoder(this_nobs)
         image_feats = img_feats.view(B, To, -1)
 
-        # --- per-sample modality dropout during TRAINING ---
-        # 20% both modalities, 40% only states, 40% only images
-        if self.disable_privileged_prob > 0.0:
-            B = state_feats.shape[0]
-            device = state_feats.device
-            
-            # Generate random values for each sample
-            rand_vals = torch.rand(B, device=device)
-            
-            # Create masks for different dropout scenarios
-            # 0-0.25: keep both modalities (no mask needed)
-            # 0.25-0.75: drop state, keep image
-            # 0.75-1.0: keep state, drop image
-            disable_state_mask = (rand_vals >= 0.25) & (rand_vals < 0.75)
-            disable_image_mask = rand_vals >= 0.75
-            
-            # Reshape masks for broadcasting
-            disable_state_mask = disable_state_mask.view(B, 1, 1)
-            disable_image_mask = disable_image_mask.view(B, 1, 1)
-            
-            # Apply masks to features
-            dropped_state = self._disable_state(state_feats)
-            state_feats = torch.where(disable_state_mask, dropped_state, state_feats)
-            
-            zero_image = torch.zeros_like(image_feats)
-            image_feats = torch.where(disable_image_mask, zero_image, image_feats)
-            
-            # Print debug info about how many samples had each modality disabled
-            num_state_disabled = disable_state_mask.sum().item()
-            num_image_disabled = disable_image_mask.sum().item()
-            num_both_enabled = B - num_state_disabled - num_image_disabled
-            print(f"Batch modality dropout: {num_both_enabled}/{B} both enabled, "
-                  f"{num_state_disabled}/{B} state disabled, "
-                  f"{num_image_disabled}/{B} image disabled")
+        # NO modality dropout during training - always use both modalities
 
-        # fuse & shared
+        # fuse & shared - ALWAYS USE BOTH MODALITIES
         if self.fuse_op == 'sum':
             fused = state_feats + image_feats
         else:
             fused = torch.cat([state_feats, image_feats], dim=-1)
-        
+
         # Shared Encoder
         if self.shared_encoder_type == 'cross_attention':
             cond = self.shared_encoder(image_feats, state_feats)
@@ -470,15 +393,7 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
         loss = F.mse_loss(pred, target, reduction='none')
         loss = loss * (~condition_mask).type(loss.dtype)
         loss = reduce(loss, 'b ... -> b (...)', 'mean').mean()
-        
-        if self.use_contrastive_loss and self.shared_encoder_type == 'cross_attention':
-            img_only_cond = self.shared_encoder(image_feats, torch.zeros_like(state_feats))
-            state_only_cond = self.shared_encoder(torch.zeros_like(image_feats), state_feats)
-            contrastive_loss = (
-                F.mse_loss(cond, img_only_cond.detach())
-              + F.mse_loss(cond, state_only_cond.detach())
-            )
-            loss = loss + self.contrastive_weight * contrastive_loss
+
         return loss
 
     def get_optimizer(
@@ -490,22 +405,19 @@ class DiffusionTransformerPrivilegedPolicy(BaseImagePolicy):
         learning_rate: float,
         betas: tuple
     ) -> torch.optim.Optimizer:
-        groups = self.model.get_optim_groups(weight_decay=transformer_weight_decay)
-        groups.append({
-            "params": self.obs_encoder.parameters(),
-            "weight_decay": obs_encoder_weight_decay
-        })
-        groups.append({
-            "params": self.state_encoder.parameters(),
-            "weight_decay": state_encoder_weight_decay
-        })
-        if self.shared_encoder:
-            groups.append({
-                "params": self.shared_encoder.parameters(),
-                "weight_decay": shared_encoder_weight_decay
-            })
-        return AdamW(groups, lr=learning_rate, betas=betas)
+        enc_wd = {
+            'obs': obs_encoder_weight_decay,
+            'state': state_encoder_weight_decay,
+            'shared': shared_encoder_weight_decay
+        }
+        return DiffusionPolicyOptimizer.create_transformer_optimizer(
+            policy=self,
+            transformer_weight_decay=transformer_weight_decay,
+            encoder_weight_decay=enc_wd,
+            learning_rate=learning_rate,
+            betas=betas
+        )
 
     def set_normalizer(self, normalizer: LinearNormalizer):
         """Load pretrained normalizer stats for both state and action."""
-        self.normalizer.load_state_dict(normalizer.state_dict()) 
+        self.normalizer.load_state_dict(normalizer.state_dict())

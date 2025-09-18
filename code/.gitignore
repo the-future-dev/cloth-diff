@@ -2,6 +2,7 @@ build/*
 data/*
 wandb/*
 *.out
+*.err
 
 __pycache__
 

@@ -17,6 +17,7 @@ import robomimic.utils.obs_utils as ObsUtils
 import robomimic.models.base_nets as rmbn
 import diffusion_policy.model.vision.crop_randomizer as dmvc
 from diffusion_policy.common.pytorch_util import dict_apply, replace_submodules
+from diffusion_policy.model.common.optimizer_factory import DiffusionPolicyOptimizer
 from core.awac import awacDrQCNNEncoder
 
 
@@ -322,16 +323,13 @@ class DiffusionTransformerHybridImagePolicy(BaseImagePolicy):
             learning_rate: float, 
             betas: Tuple[float, float]
         ) -> torch.optim.Optimizer:
-        optim_groups = self.model.get_optim_groups(
-            weight_decay=transformer_weight_decay)
-        optim_groups.append({
-            "params": self.obs_encoder.parameters(),
-            "weight_decay": obs_encoder_weight_decay
-        })
-        optimizer = torch.optim.AdamW(
-            optim_groups, lr=learning_rate, betas=betas
+        return DiffusionPolicyOptimizer.create_transformer_optimizer(
+            policy=self,
+            transformer_weight_decay=transformer_weight_decay,
+            encoder_weight_decay=obs_encoder_weight_decay,
+            learning_rate=learning_rate,
+            betas=tuple(betas)
         )
-        return optimizer
 
     def compute_loss(self, batch):
         # normalize input

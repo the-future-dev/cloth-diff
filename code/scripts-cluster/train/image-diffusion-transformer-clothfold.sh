@@ -1,7 +1,12 @@
 #!/bin/bash
-#SBATCH -A berzelius-2025-35
-#SBATCH --gpus 1
+#SBATCH -A berzelius-2025-278
+#SBATCH -p berzelius
+#SBATCH --qos=normal
+#SBATCH --gpus=1
 #SBATCH -t 1-00:00:00
+#SBATCH -J clothfold-train
+#SBATCH -o slurm-%x-%j.out
+#SBATCH -e slurm-%x-%j.err
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
     echo "Usage: $0 <num_episodes> <num_variations> [resume|--resume|-r]"
