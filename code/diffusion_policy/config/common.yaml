@@ -1,0 +1,87 @@
+#############################################
+# common.yaml
+# Fully explicit base configuration. Every TrainConfig field is specified here
+# using the section names expected by diffusion_policy.utils.config._apply_file_config:
+#   wandb, optionizer, data, model, optim, checkpoint
+#############################################
+
+wandb:
+  enabled: true              # bool -> cfg.wandb
+  project: clothdiff         # str  -> cfg.wandb_project
+  name: null                 # optional run name -> cfg.exp_name
+
+# High-level runtime options (named 'optionizer' in loader)
+optionizer:
+  mode: train                # train | eval -> cfg.mode
+  seed: 1234                 # -> cfg.seed
+  device: auto               # cpu | cuda | auto -> cfg.device
+
+data:
+  dataset_path: null         # path to dataset (.pkl or folder) -> cfg.dataset_path
+  batch_size: 256            # -> cfg.batch_size
+  num_workers: 8             # -> cfg.num_workers
+  val_ratio: 0.05            # portion for validation -> cfg.val_ratio
+  env_img_size: null         # optional int guard for image size -> cfg.env_img_size
+
+model:
+  name: transformer-lowdim   # one of: transformer-lowdim | transformer-image | transformer-privileged -> cfg.model
+  horizon: 16                # temporal horizon -> cfg.horizon
+  n_obs_steps: 2             # observation frames fed in -> cfg.n_obs_steps
+  n_action_steps: 8          # number of future action steps to output (window) -> cfg.n_action_steps
+  num_inference_steps: 100   # reserved future usage -> cfg.num_inference_steps
+  lowdim_weight: 1.0         # privileged policy auxiliary weighting -> cfg.lowdim_weight
+
+optim:
+  lr: 1.0e-4                 # learning rate -> cfg.lr
+  beta1: 0.95                # AdamW beta1 -> cfg.beta1
+  beta2: 0.999               # AdamW beta2 -> cfg.beta2
+  max_epochs: 300000        # training epochs -> cfg.max_epochs (increased for real training)
+  weight_decay: 0.0          # AdamW weight decay -> cfg.weight_decay
+
+checkpoint:
+  dir: ./data/cloth-diff/         # directory for checkpoints -> cfg.checkpoint_dir
+  every: 30000              # save frequency (epochs) -> cfg.checkpoint_every (reasonable for long training)
+  keep_last: 1               # rolling retention -> cfg.keep_last
+  resume: false              # attempt resume -> cfg.resume
+  resume_path: null          # explicit .pth to load -> cfg.resume_path
+
+#############################################
+# Evaluation (online rollout during training)
+# Maps to cfg.eval_* fields + dynamic cfg.env_kwargs
+# If enabled & env_kwargs provided, evaluator runs every 'interval' epochs.
+#############################################
+evaluation:
+  enabled: true            # -> cfg.eval_enabled (can be disabled via --no-eval)
+  interval: 30000           # epochs between evaluation runs -> cfg.eval_interval (reasonable for long training)
+  num_episodes: 5          # episodes per evaluation call -> cfg.eval_num_episodes (balanced speed/accuracy)
+  video: true              # save gif for first episode -> cfg.eval_video
+  gif_size: 64            # pixel size of output gif -> cfg.eval_gif_size
+  env_img_size: 128        # resolution to request frames from env -> cfg.eval_env_img_size
+  max_episode_steps: 100   # override rollout length if not null -> cfg.eval_max_episode_steps
+  seed: null               # fixed seed for deterministic eval; null => leave RNG -> cfg.eval_seed
+  # Environment constructor arguments passed through as cfg.env_kwargs (optional)
+  # Provide real SoftGym parameters here; below is a scaffold example to customize.
+  env_kwargs:
+    env: ClothFold            # name registered in SoftGym
+    env_kwargs:               # forwarded to underlying SoftGym constructor
+      num_variations: 1000    # REQUIRED: number of environment variations
+      observation_mode: 'key_point'  # key_point for lowdim, cam_rgb for image-based
+      action_mode: 'picker'   # REQUIRED: action space type
+      num_picker: 2           # number of pickers for picker action mode
+      render: True
+      headless: True
+      horizon: 100
+      action_repeat: 8
+      render_mode: 'cloth'
+      use_cached_states: True
+      deterministic: False
+    symbolic: true            # true for key_point, false for cam_rgb
+    seed: 1234
+    max_episode_length: 100
+    action_repeat: 1
+    bit_depth: 8
+    image_dim: 128
+    normalize_observation: false
+    scale_reward: 1.0
+    clip_obs: null
+    obs_process: null

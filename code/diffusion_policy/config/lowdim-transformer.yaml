@@ -1,0 +1,15 @@
+#############################################
+# lowdim-transformer.yaml
+# Explicit config for low-dimensional transformer policy.
+# Still extends common.yaml but we restate (override) every section for clarity.
+#############################################
+
+extends: ./common.yaml
+
+model:
+  name: transformer-lowdim   # one of: transformer-lowdim | transformer-image | transformer-privileged -> cfg.model
+  horizon: 16                # temporal horizon -> cfg.horizon
+  n_obs_steps: 2             # observation frames fed in -> cfg.n_obs_steps
+  n_action_steps: 8          # number of future action steps to output (window) -> cfg.n_action_steps
+  num_inference_steps: 100   # reserved future usage -> cfg.num_inference_steps
+  lowdim_weight: 1.0         # privileged policy auxiliary weighting -> cfg.lowdim_weight
