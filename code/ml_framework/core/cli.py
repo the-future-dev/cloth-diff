@@ -2,16 +2,16 @@ from __future__ import annotations
 import sys
 import torch
 
-from diffusion_policy.utils.config import parse_config, pretty_config
+from ml_framework.utils.config import parse_config, pretty_config
 import os
-from diffusion_policy.utils.misc import set_seed, get_device
-from diffusion_policy.data.data import make_dataloaders
-from diffusion_policy.core.loop import train_epochs
-from diffusion_policy.policies.transformer_lowdim import TransformerLowDimPolicy
-from diffusion_policy.policies.transformer_image import TransformerImagePolicy
-from diffusion_policy.policies.transformer_privileged import TransformerPrivilegedPolicy
-from diffusion_policy.utils.shape_validation import create_shape_validator
-from diffusion_policy.utils.misc import ensure_dir
+from ml_framework.utils.misc import set_seed, get_device
+from ml_framework.data.data import make_dataloaders
+from ml_framework.core.loop import train_epochs
+from transformer_policies.policies.transformer_lowdim import TransformerLowDimPolicy
+from transformer_policies.policies.transformer_image import TransformerImagePolicy
+from transformer_policies.policies.transformer_privileged import TransformerPrivilegedPolicy
+from ml_framework.utils.shape_validation import create_shape_validator
+from ml_framework.utils.misc import ensure_dir
 
 from functools import reduce
 import operator

@@ -2,12 +2,12 @@ from __future__ import annotations
 from typing import Dict, Optional
 import torch
 
-from diffusion_policy.policies.interfaces import Policy
-from diffusion_policy.data.normalizer import IdentityNormalizer
-from diffusion_policy.models.encoders import ObsEncoder, create_encoder
+from ml_framework.interfaces.interfaces import Policy
+from ml_framework.data.normalizer import IdentityNormalizer
+from ml_framework.models.encoders import ObsEncoder, create_encoder
 
-class BaseImagePolicy(Policy, torch.nn.Module):
-    """Base interface for image policies with obs_encoder support and convenience device/dtype accessors."""
+class BaseLowdimPolicy(Policy, torch.nn.Module):
+    """Base interface for low-dim policies with obs_encoder support and convenience device/dtype accessors."""
     def __init__(self, obs_encoder: Optional[ObsEncoder] = None) -> None:
         super().__init__()
         self.normalizer = IdentityNormalizer()
@@ -17,6 +17,7 @@ class BaseImagePolicy(Policy, torch.nn.Module):
         """Set the observation encoder."""
         self.obs_encoder = obs_encoder
 
+    # For compatibility with old ModuleAttrMixin
     @property
     def device(self) -> torch.device:
         return next(self.parameters()).device if any(True for _ in self.parameters()) else torch.device('cpu')
@@ -35,17 +36,13 @@ class BaseImagePolicy(Policy, torch.nn.Module):
         Returns:
             encoded_obs: Encoded observations ready for backbone
         """
-        obs = obs_dict["obs"]  # [B, T, C, H, W] or [B, T, feat_dim]
+        obs = obs_dict["obs"]  # [B, T, obs_dim]
         
         if self.obs_encoder is not None:
             return self.obs_encoder(obs)
         else:
-            # No encoder - flatten images or pass through features
-            if obs.dim() == 5:  # Image format [B, T, C, H, W]
-                B, T, C, H, W = obs.shape
-                return obs.reshape(B, T, C * H * W)
-            else:  # Feature format [B, T, feat_dim]
-                return obs
+            # No encoder - pass through observations directly
+            return obs
 
     def predict_action(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         raise NotImplementedError()

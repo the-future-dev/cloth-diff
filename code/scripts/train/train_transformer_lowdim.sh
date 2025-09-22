@@ -23,14 +23,14 @@ export LD_LIBRARY_PATH=${PYFLEXROOT}/external/SDL2-2.0.4/lib/x64:$LD_LIBRARY_PAT
 EPS=${1:-200}
 VARS=${2:-25}
 
-echo "=== ClothFold Training ==="
+echo "=== ClothFold Training (Refactored) ==="
 echo "Episodes: $EPS, Variations: $VARS"
 echo "=========================="
 
-python -m diffusion_policy.core.cli \
+python -m ml_framework.core.cli \
   --mode train \
   --model transformer-lowdim \
-  --config diffusion_policy/config/lowdim-transformer.yaml \
+  --config transformer_policies/config/lowdim-transformer.yaml \
   --eps "$EPS" \
   --vars "$VARS" \
   --exp_name "lowdim-transformer-clothfold-${VARS}vars-${EPS}eps" \

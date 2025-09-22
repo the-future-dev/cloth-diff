@@ -3,7 +3,7 @@ from typing import Tuple
 import torch
 from torch.utils.data import DataLoader
 
-from diffusion_policy.data.demonstrations import Demonstrations
+from ml_framework.data.demonstrations import Demonstrations
 
 
 def make_dataloaders(dataset_path: str, batch_size: int, num_workers: int,

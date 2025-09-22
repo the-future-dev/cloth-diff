@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing import Dict, Optional
 import torch
 
-from diffusion_policy.policies.interfaces import Policy
-from diffusion_policy.data.normalizer import IdentityNormalizer
-from diffusion_policy.models.encoders import ObsEncoder, create_encoder
+from ml_framework.interfaces.interfaces import Policy
+from ml_framework.data.normalizer import IdentityNormalizer
+from ml_framework.models.encoders import ObsEncoder, create_encoder
 
 class BasePrivilegedPolicy(Policy, torch.nn.Module):
     """Base interface for privileged policies that train with state+image but infer image-only.

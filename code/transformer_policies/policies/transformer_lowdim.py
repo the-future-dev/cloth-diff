@@ -4,9 +4,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from diffusion_policy.policies.base_lowdim import BaseLowdimPolicy
-from diffusion_policy.models.common.transformer import TransformerBackbone
-from diffusion_policy.models.encoders import ObsEncoder, create_encoder
+from ml_framework.interfaces.base_lowdim import BaseLowdimPolicy
+from ml_framework.models.common.transformer import TransformerBackbone
+from ml_framework.models.encoders import ObsEncoder, create_encoder
 
 class TransformerLowDimPolicy(BaseLowdimPolicy):
     def __init__(self, obs_dim: int, action_dim: int, horizon: int,

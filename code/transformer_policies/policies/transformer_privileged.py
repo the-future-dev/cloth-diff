@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing import Dict, Optional
 import torch
 
-from diffusion_policy.policies.base_privileged import BasePrivilegedPolicy
-from diffusion_policy.policies.transformer_image import TransformerImagePolicy
-from diffusion_policy.policies.transformer_lowdim import TransformerLowDimPolicy
+from ml_framework.interfaces.base_privileged import BasePrivilegedPolicy
+from transformer_policies.policies.transformer_image import TransformerImagePolicy
+from transformer_policies.policies.transformer_lowdim import TransformerLowDimPolicy
 
 
 class TransformerPrivilegedPolicy(BasePrivilegedPolicy):

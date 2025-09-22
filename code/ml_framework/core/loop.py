@@ -4,8 +4,8 @@ import os
 import torch
 from tqdm import tqdm
 import wandb
-from diffusion_policy.core.evaluator import Evaluator
-from diffusion_policy.utils.misc import set_seed
+from ml_framework.core.evaluator import Evaluator
+from ml_framework.utils.misc import set_seed
 
 def _compute_loss_with_components(policy, batch: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, float]]:
     """Allow policies to optionally return (loss, components_dict). Backwards compat: plain tensor."""
