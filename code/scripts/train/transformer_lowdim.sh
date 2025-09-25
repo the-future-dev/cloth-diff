@@ -23,7 +23,7 @@ if [ "$1" == "--single" ]; then
     python -m ml_framework.core.cli \
       --mode train \
       --model transformer-lowdim \
-      --config foundation_policies/config/transformer-lowdim.yaml \
+      --config foundation_policy/config/transformer-lowdim.yaml \
       --eps "$EPS" \
       --vars "$VARS" \
       --exp_name "transformer-lowdim-${VARS}vars-${EPS}eps" \
@@ -45,7 +45,7 @@ else
         python -m ml_framework.core.cli \
           --mode train \
           --model transformer-lowdim \
-          --config foundation_policies/config/transformer-lowdim.yaml \
+          --config foundation_policy/config/transformer-lowdim.yaml \
           --eps "$eps" \
           --vars "$vars" \
           --exp_name "transformer-lowdim-${vars}vars-${eps}eps" \

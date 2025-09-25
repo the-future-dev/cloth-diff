@@ -23,7 +23,7 @@ if [ "$1" == "--single" ]; then
     python -m ml_framework.core.cli \
       --mode train \
       --model transformer-image \
-      --config foundation_policies/config/transformer-image.yaml \
+      --config foundation_policy/config/transformer-image.yaml \
       --eps "$EPS" \
       --vars "$VARS" \
       --exp_name "transformer-image-${VARS}vars-${EPS}eps" \
@@ -44,7 +44,7 @@ else
         python -m ml_framework.core.cli \
           --mode train \
           --model transformer-image \
-          --config foundation_policies/config/transformer-image.yaml \
+          --config foundation_policy/config/transformer-image.yaml \
           --eps "$eps" \
           --vars "$vars" \
           --exp_name "transformer-image-${vars}vars-${eps}eps" \

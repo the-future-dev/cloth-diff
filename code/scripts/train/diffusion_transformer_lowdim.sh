@@ -8,9 +8,7 @@
 #SBATCH -o slurm-%x-%j.out
 #SBATCH -e slurm-%x-%j.err
 
-# Usage: sbatch train_diffusion_transformer_lowdim.sh [eps] [vars]
-EPS=${1:-200}
-VARS=${2:-25}
+# Usage: sbatch train_diffusion_transformer_lowdim.sh [--single]
 
 module load Mambaforge/23.3.1-1-hpc1-bdist
 mamba activate softgym
@@ -19,12 +17,41 @@ export PYFLEXROOT=${PWD}/softgym/PyFlex
 export PYTHONPATH=${PWD}:${PWD}/softgym:${PYFLEXROOT}/bindings/build:$PYTHONPATH
 export LD_LIBRARY_PATH=${PYFLEXROOT}/external/SDL2-2.0.4/lib/x64:$LD_LIBRARY_PATH
 
-python -m ml_framework.core.cli \
-  --mode train \
-  --model diffusion-transformer-lowdim \
-  --config diffusion_policy/config/diffusion-transformer-lowdim.yaml \
-  --eps "$EPS" \
-  --vars "$VARS" \
-  --exp_name "diffusion-transformer-lowdim-${VARS}vars-${EPS}eps" \
-  --dataset_path "/proj/rep-learning-robotics/users/x_andri/dmfd/data/ClothFold_vars-${VARS}_eps-${EPS}_image_based_trajs.pkl" \
-  --wandb
+if [ "$1" == "--single" ]; then
+    EPS=200
+    VARS=25
+    python -m ml_framework.core.cli \
+      --mode train \
+      --model diffusion-transformer-lowdim \
+      --config diffusion_policy/config/diffusion-transformer-lowdim.yaml \
+      --eps "$EPS" \
+      --vars "$VARS" \
+      --exp_name "diffusion-transformer-lowdim-${VARS}vars-${EPS}eps" \
+      --dataset_path "./data/ClothFold_vars-${VARS}_eps-${EPS}_img-128.pkl" \
+      --wandb \
+      --eval_video
+else
+    combinations=(
+        "40 5"
+        "200 25"
+        "1000 125"
+        "4000 500"
+        "8000 1000"
+    )
+    for combo in "${combinations[@]}"; do
+        set -- $combo
+        eps=$1
+        vars=$2
+        python -m ml_framework.core.cli \
+          --mode train \
+          --model diffusion-transformer-lowdim \
+          --config diffusion_policy/config/diffusion-transformer-lowdim.yaml \
+          --eps "$eps" \
+          --vars "$vars" \
+          --exp_name "diffusion-transformer-lowdim-${vars}vars-${eps}eps" \
+          --dataset_path "./data/ClothFold_vars-${vars}_eps-${eps}_img-128.pkl" \
+          --wandb \
+          --eval_video &
+    done
+    wait
+fi

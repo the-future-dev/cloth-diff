@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ml_framework.interfaces.base_image import BaseImagePolicy
-from foundation_policies.models.transformer_backbone import TransformerBackbone
+from foundation_policy.models.transformer_backbone import TransformerBackbone
 from ml_framework.data.normalizer import IdentityNormalizer
 
 class TransformerImagePolicy(BaseImagePolicy):

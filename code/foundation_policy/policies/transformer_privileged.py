@@ -3,8 +3,8 @@ from typing import Dict, Optional
 import torch
 
 from ml_framework.interfaces.base_privileged import BasePrivilegedPolicy
-from foundation_policies.policies.transformer_image import TransformerImagePolicy
-from foundation_policies.policies.transformer_lowdim import TransformerLowDimPolicy
+from foundation_policy.policies.transformer_image import TransformerImagePolicy
+from foundation_policy.policies.transformer_lowdim import TransformerLowDimPolicy
 from ml_framework.data.normalizer import IdentityNormalizer
 
 class TransformerPrivilegedPolicy(BasePrivilegedPolicy):

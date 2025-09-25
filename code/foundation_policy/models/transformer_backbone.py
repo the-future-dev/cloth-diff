@@ -3,7 +3,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from foundation_policies.models.positional_encoding import PositionalEncoding
+from foundation_policy.models.positional_encoding import PositionalEncoding
 
 class TransformerBackbone(nn.Module):
     """Enhanced transformer encoder-decoder backbone with layer norm and residual connections."""

@@ -8,9 +8,9 @@ from ml_framework.utils.misc import set_seed, get_device
 from ml_framework.utils.pytorch_util import optimizer_to, dict_apply
 from ml_framework.data.data import make_dataloaders
 from ml_framework.core.loop import train_epochs
-from foundation_policies.policies.transformer_lowdim import TransformerLowDimPolicy
-from foundation_policies.policies.transformer_image import TransformerImagePolicy
-from foundation_policies.policies.transformer_privileged import TransformerPrivilegedPolicy
+from foundation_policy.policies.transformer_lowdim import TransformerLowDimPolicy
+from foundation_policy.policies.transformer_image import TransformerImagePolicy
+from foundation_policy.policies.transformer_privileged import TransformerPrivilegedPolicy
 # Import diffusion policies
 from diffusion_policy.policies.diffusion_transformer_lowdim_policy import DiffusionTransformerLowdimPolicy
 from diffusion_policy.model.diffusion.transformer_for_diffusion import TransformerForDiffusion
