@@ -79,7 +79,6 @@ class Evaluator:
             img_t = torch.tensor(img, dtype=torch.float32, device=self.device)
             memory['image'].append(img_t)
             img_seq = torch.stack(list(memory['image']), dim=0)  # [T, C, H, W]
-            img_seq = img_seq.permute(0, 2, 3, 1).contiguous()   # [T, H, W, C] for consistency
             batch_img = img_seq.unsqueeze(0)
             return {"image": batch_img}
         elif self.is_image_based:

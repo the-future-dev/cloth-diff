@@ -159,9 +159,6 @@ class SoftGymEnvSB3(gym.Env):
                 raise NotImplementedError
                 # return self.obs_process(obs)
         else:
-            # comment out because currently our method does not require the images to be resized or normalized. Also, this could break AWAC with imageas as input.
-            # return _images_to_observation(obs, self.bit_depth, self.image_dim, normalize_observation=self.normalize_observation)
-            # obs['image'] = torch.tensor(np.expand_dims(obs['image'].transpose(2, 0, 1), axis=0), dtype=torch.uint8)
             return obs
 
     def step(self, action, **kwargs):
@@ -177,11 +174,6 @@ class SoftGymEnvSB3(gym.Env):
             if self.symbolic:
                 if self.obs_process is not None:
                     raise NotImplementedError
-                    # obs = self.obs_process(obs)
-            # else:
-                # comment out because currently our method does not require the images to be resized or normalized. Also, this could break AWAC with imageas as input.
-                # obs = _images_to_observation(obs, self.bit_depth, self.image_dim, normalize_observation=self.normalize_observation)
-                # obs['image'] = torch.tensor(np.expand_dims(obs['image'].transpose(2, 0, 1), axis=0), dtype=torch.uint8)
             if done:
                 break
         return obs, reward, done, info

@@ -1,0 +1,69 @@
+#############################################
+# common.yaml - Common configuration
+#############################################
+
+# High-level configuration
+mode: "train"  # or "eval"
+seed: 1234
+device: "auto"
+
+# Data configuration
+dataset_path: null  # path to dataset file
+batch_size: 256
+num_workers: 8
+val_ratio: 0.05  # portion of dataset used for validation
+
+# Model/Policy configuration
+# model: transformer-lowdim, transformer-image, transformer-privileged, diffusion-transformer-lowdim
+horizon: 16
+n_obs_steps: 2
+n_action_steps: 8
+# lowdim_weight: 1.0  # used by privileged policy (loss weighting)
+
+# Environment / data expectations
+env_img_size: null  # optional image size guard
+
+# Optimizer configuration
+lr: 1e-5
+beta1: 0.95
+beta2: 0.999
+weight_decay: 0.0
+max_epochs: 100000
+
+# Checkpointing configuration
+checkpoint_dir: "./checkpoints"
+checkpoint_every: 300000
+keep_last: 1
+resume: false
+resume_path: null  # explicit checkpoint path to load
+
+# Logging configuration
+wandb: true
+wandb_project: "clothdiff"
+exp_name: null
+no_wandb: false  # CLI convenience flag to force disable
+log_json: false  # JSON logging during training
+
+# Evaluation configuration (online during training)
+eval_enabled: true  # master switch
+eval_interval: 10000  # epochs between eval runs
+eval_num_episodes: 5  # episodes per evaluation call
+eval_video: true    # save a gif for first episode of each eval
+eval_gif_size: 128  # resolution for saved gif
+eval_env_img_size: 128  # size used when querying env.get_image
+eval_max_episode_steps: 100  # maximum steps per evaluation episode
+eval_seed: 1234  # optional seed for evaluation runs
+
+# Environment configuration for evaluation
+env_kwargs:
+  observation_mode: 'cam_rgb'
+  action_mode: 'picker'
+  num_picker: 2
+  render: true
+  headless: true
+  horizon: 100
+  action_repeat: 8
+  render_mode: 'cloth'
+  num_variations: 1000
+  use_cached_states: true
+  deterministic: false

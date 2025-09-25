@@ -1,0 +1,7 @@
+# Config for non-diffusion transformer low-dim policy
+# Inherits from common.yaml and overrides specific parameters
+
+extends: ./common.yaml
+
+# Model configuration
+model: "transformer-lowdim"

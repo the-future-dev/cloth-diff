@@ -1,0 +1,26 @@
+#############################################
+# diffusion-transformer-lowdim.yaml
+# Configuration for diffusion-based transformer policy (low-dimensional)
+#############################################
+
+extends: ./common.yaml
+
+model:
+  name: diffusion-transformer-lowdim   # diffusion transformer for low-dim observations
+  horizon: 16                          # temporal horizon
+  n_obs_steps: 2                       # observation frames fed in
+  n_action_steps: 8                    # number of future action steps to output
+  num_inference_steps: 100             # diffusion sampling steps
+  
+  # Transformer architecture
+  transformer:
+    n_layer: 8
+    n_head: 4  
+    n_emb: 256
+    p_drop_emb: 0.0
+    p_drop_attn: 0.3
+    causal_attn: true
+    
+  # Training parameters
+  obs_as_cond: false
+  pred_action_steps_only: false

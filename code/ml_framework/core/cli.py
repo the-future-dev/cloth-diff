@@ -5,11 +5,16 @@ import torch
 from ml_framework.utils.config import parse_config, pretty_config
 import os
 from ml_framework.utils.misc import set_seed, get_device
+from ml_framework.utils.pytorch_util import optimizer_to, dict_apply
 from ml_framework.data.data import make_dataloaders
 from ml_framework.core.loop import train_epochs
-from transformer_policies.policies.transformer_lowdim import TransformerLowDimPolicy
-from transformer_policies.policies.transformer_image import TransformerImagePolicy
-from transformer_policies.policies.transformer_privileged import TransformerPrivilegedPolicy
+from foundation_policies.policies.transformer_lowdim import TransformerLowDimPolicy
+from foundation_policies.policies.transformer_image import TransformerImagePolicy
+from foundation_policies.policies.transformer_privileged import TransformerPrivilegedPolicy
+# Import diffusion policies
+from diffusion_policy.policies.diffusion_transformer_lowdim_policy import DiffusionTransformerLowdimPolicy
+from diffusion_policy.model.diffusion.transformer_for_diffusion import TransformerForDiffusion
+from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from ml_framework.utils.shape_validation import create_shape_validator
 from ml_framework.utils.misc import ensure_dir
 
@@ -146,14 +151,63 @@ def main(argv=None):
                 print(f"  ✅ State obs dimension correctly computed as {expected_obs}")
 
         # choose policy by cfg.model
-        if cfg.model in ("transformer-lowdim", "transformer_lowdim"):
+        # Determine model name (handles both string and dict cases)
+        model_name = cfg.model.get('name') if isinstance(cfg.model, dict) else cfg.model
+        
+        if model_name in ("transformer-lowdim", "transformer_lowdim"):
             policy = TransformerLowDimPolicy(Do, Da, cfg.horizon, cfg.n_action_steps, cfg.n_obs_steps)
-        elif cfg.model in ("transformer-image", "transformer_image"):
+        elif model_name in ("transformer-image", "transformer_image"):
             policy = TransformerImagePolicy(Do, Da, cfg.horizon, cfg.n_action_steps, cfg.n_obs_steps)
-        elif cfg.model in ("transformer-privileged", "transformer_privileged"):
+        elif model_name in ("transformer-privileged", "transformer_privileged"):
             policy = TransformerPrivilegedPolicy(Do_img, Do_state, Da, cfg.horizon, cfg.n_action_steps, cfg.n_obs_steps, lowdim_weight=cfg.lowdim_weight)
+        elif model_name in ("diffusion-transformer-lowdim", "diffusion_transformer_lowdim"):
+            # Create noise scheduler
+            noise_scheduler = DDPMScheduler(
+                num_train_timesteps=cfg.num_inference_steps,
+                beta_start=0.0001,
+                beta_end=0.02,
+                beta_schedule="squaredcos_cap_v2",
+                clip_sample=True,
+                prediction_type="epsilon"
+            )
+            
+            # Get transformer config
+            transformer_cfg = cfg.model['transformer'] if isinstance(cfg.model, dict) else getattr(cfg, 'transformer', {})
+            obs_as_cond = cfg.model.get('obs_as_cond', False) if isinstance(cfg.model, dict) else getattr(cfg, 'obs_as_cond', False)
+            
+            # Compute dimensions
+            input_dim = Da if obs_as_cond else (Do + Da)
+            output_dim = input_dim
+            cond_dim = Do if obs_as_cond else 0
+            
+            # Create transformer model
+            transformer_model = TransformerForDiffusion(
+                input_dim=input_dim,
+                output_dim=output_dim,
+                horizon=cfg.horizon,
+                n_obs_steps=cfg.n_obs_steps,
+                cond_dim=cond_dim,
+                n_layer=transformer_cfg.get('n_layer', 8),
+                n_head=transformer_cfg.get('n_head', 4),
+                n_emb=transformer_cfg.get('n_emb', 256),
+                p_drop_emb=transformer_cfg.get('p_drop_emb', 0.0),
+                p_drop_attn=transformer_cfg.get('p_drop_attn', 0.3),
+                causal_attn=transformer_cfg.get('causal_attn', True),
+                obs_as_cond=obs_as_cond
+            )
+            
+            policy = DiffusionTransformerLowdimPolicy(
+                model=transformer_model,
+                noise_scheduler=noise_scheduler,
+                horizon=cfg.horizon,
+                obs_dim=Do,
+                action_dim=Da,
+                n_action_steps=cfg.n_action_steps,
+                n_obs_steps=cfg.n_obs_steps,
+                num_inference_steps=cfg.num_inference_steps
+            )
         else:
-            print(f"Unsupported model: {cfg.model}", file=sys.stderr)
+            print(f"Unsupported model: {model_name}", file=sys.stderr)
             sys.exit(2)
 
         # ---- COMPREHENSIVE POLICY VALIDATION ----
@@ -235,6 +289,7 @@ def main(argv=None):
         print("="*80 + "\n")
 
         optim = torch.optim.AdamW(policy.parameters(), lr=cfg.lr, betas=(cfg.beta1, cfg.beta2), weight_decay=cfg.weight_decay)
+        optimizer_to(optim, device)
         # Optional: wandb
         if cfg.wandb and not cfg.no_wandb:
             wandb.init(project=cfg.wandb_project, name=cfg.exp_name, config=cfg.to_dict())
@@ -273,6 +328,7 @@ def main(argv=None):
             Do = _flatten_obs_dim(obs_shape, is_image=is_img)
         Da = first["action"].shape[-1]
 
+        # choose policy by cfg.model
         if cfg.model in ("transformer-lowdim", "transformer_lowdim"):
             policy = TransformerLowDimPolicy(Do, Da, cfg.horizon, cfg.n_action_steps, cfg.n_obs_steps)
         elif cfg.model in ("transformer-image", "transformer_image"):
@@ -288,8 +344,13 @@ def main(argv=None):
         total = 0.0
         n = 0
         with torch.no_grad():
+            # Basic shape validation for eval
+            print(f"Eval data shapes: obs {first['obs'].shape if 'obs' in first else 'N/A'}, action {first['action'].shape}")
+            if privileged:
+                print(f"Privileged: image {first['image'].shape}, state {first['state'].shape}")
+            
             for batch in loader:
-                batch = {k: v.to(device) for k, v in batch.items()}
+                batch = dict_apply(batch, lambda x: x.to(device))
                 total += float(policy.compute_loss(batch))
                 n += 1
         print(f"Eval loss: {total/max(1,n):.6f}")

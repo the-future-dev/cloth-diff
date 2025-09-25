@@ -1,0 +1,49 @@
+#############################################
+# common.yaml - Common configuration for diffusion policies
+#############################################
+
+# Training configuration
+batch_size: 256
+num_workers: 8
+lr: 1e-5
+weight_decay: 0.0
+val_ratio: 0.05
+max_epochs: 300000
+
+# Environment configuration  
+img_size: 128
+max_episode_steps: 100
+
+# Logging configuration
+wandb: true
+wandb_project: "clothdiff"
+log_json: false
+checkpoint_dir: "./checkpoints"
+checkpoint_every: 300001
+keep_last: 1
+resume: false
+resume_path: null  
+
+eval_enabled: true  # master switch
+eval_interval: 10000  # epochs between eval runs
+eval_num_episodes: 5  # episodes per evaluation call
+eval_video: true    # save a gif for first episode of each eval
+eval_gif_size: 128  # resolution for saved gif
+eval_env_img_size: 128  # size used when querying env.get_image
+eval_max_episode_steps: 100  # maximum steps per evaluation episode
+eval_seed: 1234  # optional seed for evaluation runs
+
+# Diffusion-specific parameters
+noise_scheduler:
+  type: "DDPM"
+  num_train_timesteps: 100
+  beta_start: 0.0001
+  beta_end: 0.02
+  beta_schedule: "squaredcos_cap_v2"
+  clip_sample: true
+  prediction_type: "epsilon"
+
+
+# Device configuration
+device: "auto"
+seed: 1234

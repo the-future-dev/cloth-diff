@@ -49,12 +49,13 @@ class TrainConfig:
     wandb_project: str = "clothdiff"
     exp_name: Optional[str] = None
     no_wandb: bool = False  # CLI convenience flag to force disable
+    log_json: bool = True  # JSON logging during training
 
     # evaluation (online during training)
     eval_enabled: bool = True          # master switch
     eval_interval: int = 1             # epochs between eval runs
     eval_num_episodes: int = 10        # episodes per evaluation call
-    eval_video: bool = False           # save a gif for first episode of each eval
+    eval_video: bool = True            # save a gif for first episode of each eval
     eval_gif_size: int = 128           # resolution for saved gif
     eval_env_img_size: int = 128       # size used when querying env.get_image
     eval_max_episode_steps: Optional[int] = None  # if provided, overrides max steps for eval rollout
@@ -83,7 +84,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--val_ratio", type=float, default=0.05)
     # policy
     p.add_argument("--model", type=str, default="transformer-lowdim",
-                   choices=["transformer-lowdim","transformer-image","transformer-privileged"]) 
+                   choices=["transformer-lowdim","transformer-image","transformer-privileged","diffusion-transformer-lowdim"]) 
     p.add_argument("--horizon", type=int, default=16)
     p.add_argument("--n_obs_steps", type=int, default=2)
     p.add_argument("--n_action_steps", type=int, default=8)
@@ -101,6 +102,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--no-wandb", action="store_true", help="Disable Weights & Biases logging (overrides anything else)")
     p.add_argument("--wandb_project", type=str, default="clothdiff")
     p.add_argument("--exp_name", type=str, default=None)
+    p.add_argument("--log_json", action="store_true", help="Enable JSON logging")
 
     # evaluation
     p.add_argument("--eval_enabled", action="store_true", help="Enable online evaluation during training")
@@ -152,7 +154,7 @@ def parse_config(argv=None) -> TrainConfig:
         "model", "horizon", "n_obs_steps", "n_action_steps", "num_inference_steps",
         "lowdim_weight", "env_img_size",
         "lr", "beta1", "beta2", "weight_decay", "max_epochs",
-        "wandb", "wandb_project", "exp_name",
+        "wandb", "wandb_project", "exp_name", "log_json",
         "checkpoint_dir", "checkpoint_every", "keep_last", "resume", "resume_path",
         "eps", "vars"
     }
@@ -172,6 +174,10 @@ def parse_config(argv=None) -> TrainConfig:
         # Special handling for store_true flags: only override if True
         if k == "wandb":
             if bool(v):  # only set True if user passed --wandb
+                overrides[k] = True
+            continue
+        if k == "log_json":
+            if bool(v):  # only set True if user passed --log_json
                 overrides[k] = True
             continue
         if k == "resume":
@@ -256,14 +262,51 @@ def _load_config_tree(path: str) -> Dict[str, Any]:
 
 def _apply_file_config(cfg: TrainConfig, d: Dict[str, Any]) -> None:
     # Map file sections into TrainConfig fields
-    # wandb
-    w = d.get("wandb", {}) or {}
-    if "enabled" in w:
-        cfg.wandb = bool(w.get("enabled"))
-    if "project" in w:
-        cfg.wandb_project = str(w.get("project"))
-    if "name" in w:
-        cfg.exp_name = w.get("name") if w.get("name") is None else str(w.get("name"))
+    # wandb - handle both dict and boolean formats
+    w = d.get("wandb", {})
+    if isinstance(w, bool):
+        cfg.wandb = w
+    elif isinstance(w, dict):
+        w = w or {}
+        if "enabled" in w:
+            cfg.wandb = bool(w.get("enabled"))
+        if "project" in w:
+            cfg.wandb_project = str(w.get("project"))
+        if "name" in w:
+            cfg.exp_name = w.get("name") if w.get("name") is None else str(w.get("name"))
+    # Handle top-level wandb_project if present
+    if "wandb_project" in d:
+        cfg.wandb_project = str(d.get("wandb_project"))
+
+    # Handle top-level fields that might not be nested
+    if "model" in d:
+        cfg.model = str(d.get("model"))
+    if "horizon" in d:
+        cfg.horizon = int(d.get("horizon"))
+    if "n_obs_steps" in d:
+        cfg.n_obs_steps = int(d.get("n_obs_steps"))
+    if "n_action_steps" in d:
+        cfg.n_action_steps = int(d.get("n_action_steps"))
+    if "batch_size" in d:
+        cfg.batch_size = int(d.get("batch_size"))
+    if "lr" in d:
+        cfg.lr = float(d.get("lr"))
+    if "beta1" in d:
+        cfg.beta1 = float(d.get("beta1"))
+    if "beta2" in d:
+        cfg.beta2 = float(d.get("beta2"))
+    if "weight_decay" in d:
+        cfg.weight_decay = float(d.get("weight_decay"))
+    if "max_epochs" in d:
+        cfg.max_epochs = int(d.get("max_epochs"))
+    if "eval_interval" in d:
+        cfg.eval_interval = int(d.get("eval_interval"))
+    if "checkpoint_every" in d:
+        cfg.checkpoint_every = int(d.get("checkpoint_every"))
+    if "eval_max_episode_steps" in d:
+        cfg.eval_max_episode_steps = int(d.get("eval_max_episode_steps")) if d.get("eval_max_episode_steps") is not None else None
+    if "log_json" in d:
+        cfg.log_json = bool(d.get("log_json"))
 
     # optionizer
     o = d.get("optionizer", {}) or {}
@@ -388,7 +431,7 @@ def _auto_resolve_clothfold_config(cfg: TrainConfig) -> None:
             },
             'symbolic': True,  # key_point mode is symbolic
             'seed': cfg.seed,
-            'max_episode_length': 50,
+            'max_episode_length': 100,
             'action_repeat': 1,
             'bit_depth': 8,
             'image_dim': 128,

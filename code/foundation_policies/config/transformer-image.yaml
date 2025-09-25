@@ -1,0 +1,10 @@
+# Config for non-diffusion transformer image policy
+# Inherits from common.yaml and overrides specific parameters
+
+extends: ./common.yaml
+
+# Model configuration
+model: "transformer-image"
+
+# Environment configuration for image processing
+env_img_size: 128  # image size for processing

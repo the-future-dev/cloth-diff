@@ -8,6 +8,7 @@ dimension mismatches early.
 
 import torch
 import numpy as np
+from .pytorch_util import dict_apply
 from typing import Dict, List, Tuple, Any, Optional, Union
 import logging
 from functools import reduce
@@ -90,7 +91,7 @@ class ShapeValidator:
         
         try:
             # Move batch to device
-            batch_dev = {k: v.to(device) for k, v in batch.items()}
+            batch_dev = dict_apply(batch, lambda x: x.to(device))
             
             # Log input shapes
             self.logger.info("INPUT SHAPES:")
@@ -103,10 +104,14 @@ class ShapeValidator:
                 results.update(self._validate_privileged_policy(policy, batch_dev))
             elif model_type in ("transformer-image", "transformer_image"):
                 results.update(self._validate_image_policy(policy, batch_dev))
-            elif model_type in ("transformer-lowdim", "transformer_lowdim"):
+            elif model_type in ("transformer-lowdim", "transformer_lowdim", "diffusion-transformer-lowdim", "diffusion_transformer_lowdim"):
                 results.update(self._validate_lowdim_policy(policy, batch_dev))
             else:
                 raise ValueError(f"Unsupported model type: {model_type}")
+            
+            # Fit normalizer for diffusion policies
+            if model_type in ("diffusion-transformer-lowdim", "diffusion_transformer_lowdim"):
+                policy.normalizer.fit({'obs': batch_dev['obs'], 'action': batch_dev['action']})
                 
             # Test prediction
             self.logger.info("\nTESTING POLICY PREDICTION:")

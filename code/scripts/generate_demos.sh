@@ -1,7 +1,12 @@
 #!/bin/bash
-#SBATCH -A berzelius-2025-35
-#SBATCH --gpus 1
-#SBATCH -t 1-00:00:00
+#SBATCH -A berzelius-2025-278
+#SBATCH -p berzelius
+#SBATCH --qos=normal
+#SBATCH --gpus=1
+#SBATCH -t 2-00:00:00
+#SBATCH -J clothdiff-t-lowdim
+#SBATCH -o slurm-%x-%j.out
+#SBATCH -e slurm-%x-%j.err
 
 # Usage: ./scripts/train/image-dmfd-clothfold-parameterized.sh <num_episodes> <num_variations>
 # Example: ./scripts/train/image-dmfd-clothfold-parameterized.sh 8000 1000
